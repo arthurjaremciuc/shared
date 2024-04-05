@@ -1,0 +1,49 @@
+---
+  - name: Add repositories to sources list
+    blockinfile:
+      path: /etc/apt/sources.list
+      block: |
+        deb http://us.archive.ubuntu.com/ubuntu/ bionic universe
+        deb http://us.archive.ubuntu.com/ubuntu/ bionic-updates universe
+
+  - name: Install necessary packages DEB like
+    package:
+      name: '{{ pacotes_deb }}'
+      state: latest
+      update_cache: True
+
+  - name: Copy pexpect package into server - DEB
+    copy:
+      src: DEB_python-pexpect_4.6.0-1build1_all.deb
+      dest: /tmp/python-pexpect_4.6.0-1build1_all.deb
+
+  - name: Install pre-requisites for Ansible to install .deb via apt module
+    apt:
+      name:
+      - xz-utils
+
+  - name: Install pexpect package - DEB
+    apt:
+      deb: /tmp/python-pexpect_4.6.0-1build1_all.deb
+      state: present
+    when: ansible_distribution_release == 'focal'
+
+  - name: Verify if system is already joined to AD
+    command: /bin/bash -c "/usr/sbin/realm list"
+    register: realm_list_results
+
+  - name: Debug realm_list_results
+    debug:
+      msg: "{{ realm_list_results.stdout }}"
+
+  - name: Join system to AD and add the computer object in the Linux Servers OU
+    expect:
+      command: /bin/bash -c "/usr/sbin/realm join -U {{ bind_user }} --computer-ou=OU=LINUX,OU=SERVERS,OU={{ org_unit }},DC=ACSC,DC=local {{ dc_server }}"
+      responses:
+        Password for *: "{{ bind_password }}"
+    when: realm_list_results.stdout == ""
+
+  - name: Permit login from server admins
+    command: /bin/bash -c "/usr/sbin/realm permit -g corp_server_admins"
+
+...

@@ -1,0 +1,59 @@
+---
+# Install necessary packages
+  - name: Install oracle_epel_repo - OL7
+    package:
+      name: '{{ repo_rhel7 }}'
+      state: latest
+    when: ansible_distribution == "OracleLinux" and ansible_distribution_major_version == '7'
+
+  - name: Enable ol7_developer_EPEL yum repo - OL7
+    shell: yum-config-manager --enable ol7_developer_EPEL
+    when: ansible_distribution == "OracleLinux" and ansible_distribution_major_version == '7'
+
+  - name: Install necessary packages RHEL 7 like
+    package:
+      name: '{{ pacotes_rhel7 }}'
+      state: latest
+      update_cache: True
+ #   when: ansible_os_family == "RedHat" and ansible_distribution_major_version == '7'
+
+  - name: Copy pexpect package into server - RHEL 7
+    copy:
+      src: RHEL7_python-pexpect-3.3-7.12.noarch.rpm
+      dest: /tmp/python-pexpect-3.3-7.12.noarch.rpm
+
+  - name: Install pexpect package - RHEL 7
+    package:
+      name: /tmp/python-pexpect-3.3-7.12.noarch.rpm
+      state: present
+
+  # - name: Install pexpect using pip - RHEL 7
+  #   pip:
+  #     name: pexpect
+  #   when: ansible_os_family == "RedHat" and ansible_distribution_major_version == '7'
+
+# Verify and join domain
+  - name: Verify if system is already joined to AD
+    command: /bin/bash -c "/usr/sbin/realm list"
+    register: realm_list_results
+
+  - name: Debug realm_list_results
+    debug:
+      msg: "{{ realm_list_results.stdout }}"
+
+  - name: Join system to AD and add the computer object in the Linux Servers OU
+    expect:
+      command: /bin/bash -c "/usr/sbin/realm join -U {{ bind_user }} --computer-ou=OU=LINUX,OU=SERVERS,OU={{ org_unit }},DC=ACSC,DC=local {{ dc_server }}"
+      responses:
+        Password for *: "{{ bind_password }}"
+    when: realm_list_results.stdout == ""
+
+  - name: Permit login from server admins
+    command: /bin/bash -c "/usr/sbin/realm permit -g corp_server_admins"
+
+# - name: Copy sssd configuration file
+#   copy:
+#    src: RHEL7_sssd.conf
+#    dest: /etc/sssd/sssd.conf
+
+...

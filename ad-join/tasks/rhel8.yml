@@ -1,0 +1,36 @@
+---
+# Install necessary packages
+- name: Install necessary packages RHEL 8 like
+  package:
+    name: '{{ pacotes_rhel8 }}'
+    state: latest
+    update_cache: True
+  when: ansible_os_family == "RedHat" and ansible_distribution_major_version == '8'
+
+# Verify and join domain
+- name: Verify if system is already joined to AD
+  command: /bin/bash -c "/usr/sbin/realm list"
+  register: realm_list_results
+
+- name: Debug realm_list_results
+  debug:
+    msg: "{{ realm_list_results.stdout }}"
+
+- name: Join system to AD and add the computer object in the Linux Servers OU
+  expect:
+    command: /bin/bash -c "/usr/sbin/realm join -U {{ bind_user }} --computer-ou=OU=LINUX,OU=SERVERS,OU={{ org_unit }},DC=ACSC,DC=local {{ dc_server }}"
+    responses:
+      Password for *: "{{ bind_password }}"
+  when: realm_list_results.stdout == ""
+
+- name: Permit login from server admins
+  command: /bin/bash -c "/usr/sbin/realm permit -g corp_server_admins"
+
+# - name: Add default_domain_suffix to sssd.conf
+#   lineinfile:
+#    dest: /etc/sssd/sssd.conf
+#    line: 'default_domain_suffix = acsc.local'
+#    insertafter: '^\[sssd\]'
+#   notify:
+##    - restart sssd
+...

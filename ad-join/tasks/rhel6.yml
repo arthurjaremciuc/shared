@@ -1,0 +1,48 @@
+---
+#  - name: Verify if system is already joined to AD
+#    command: /bin/bash -c "/usr/sbin/realm list"
+#    register: realm_list_results
+
+#  - name: Debug realm_list_results
+#    debug:
+#      msg: "{{ realm_list_results.stdout }}"
+
+  - name: Install necessary packages RHEL 6 like
+    yum:
+      name: '{{ pacotes_rhel6 }}'
+      state: latest
+      update_cache: True
+    when: ansible_os_family == "RedHat" and ansible_distribution_major_version == '6'
+
+  - name: Copy pexpect package into server - RHEL 6
+    copy:
+      src: RHEL6_python-pexpect-3.3-7.3.noarch.rpm
+      dest: /tmp/python-pexpect-3.3-7.3.noarch.rpm
+
+  - name: Install pexpect package - RHEL 6
+    package:
+      name: /tmp/python-pexpect-3.3-7.3.noarch.rpm
+      state: present
+
+  - name: Configure authconfig parameteres for krb5.conf file
+    command: /bin/bash -c "authconfig --enablekrb5 --krb5kdc=acsc.local. --krb5adminserver=10.1.235.20 --krb5realm=ACSC.LOCAL --enablesssd --enablesssdauth --enablemkhomedir --update"
+
+  - name: Join system to AD and add the computer object in the Linux Servers OU
+    expect:
+      command: /bin/bash -c "/usr/sbin/adcli join --user={{ bind_user }} --domain-ou=OU=LINUX,OU=SERVERS,OU={{ org_unit }},DC=ACSC,DC=local -S {{ dc_server }}"
+      responses:
+        Password for *: "{{ bind_password }}"
+
+ # - name: Permit login from server admins
+ #   blockinfile:
+ #     dest: /etc/sssd/sssd.conf
+ #     block: |
+ #       access_provider = simple
+ #       simple_allow_groups = corp_server_admins
+
+  - name: Copy sssd configuration file
+    copy:
+      src: RHEL6_sssd.conf
+      dest: /etc/sssd/sssd.conf
+      mode: '0600'
+...

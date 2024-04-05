@@ -1,0 +1,54 @@
+---
+repo_rhel7:
+  - oracle-epel-release-el7
+  - oracle-release-el7
+
+pacotes_rhel7: 
+  - sssd
+  - realmd
+  - oddjob
+  - oddjob-mkhomedir
+  - adcli
+  - samba-common
+  - samba-common-tools
+  - krb5-workstation
+  - openldap-clients
+  - policycoreutils-python
+  - python-setuptools
+#  - python-pip
+
+pacotes_rhel8:
+  - realmd
+  - sssd
+  - oddjob
+  - oddjob-mkhomedir
+  - adcli
+  - samba-common
+  - samba-common-tools
+  - krb5-workstation
+  - authselect-compat
+  - python-pip
+
+pacotes_rhel6:
+  - adcli
+  - sssd
+  - authconfig
+  - pam_krb5
+  - samba-common
+  - python-setuptools
+
+pacotes_deb:
+  - realmd
+  - libnss-sss
+  - libpam-sss
+  - sssd
+  - sssd-tools
+  - adcli
+  - samba-common-bin
+  - oddjob
+  - oddjob-mkhomedir
+  - packagekit
+
+dc_server: "{{ 'scorp-gdc01.acsc.local' if org_unit == '01_CORPORATIVO' else 'hsc-gdc03.acsc.local' if org_unit == '02_HSC' else 'dce-gdc04.acsc.local' if org_unit == '06_DCSP' else 'cssj-gdc01.acsc.local' if org_unit == '07_CSSJ' else 'hst-gdc01.acsc.local' if org_unit == '08_HST' else 'hsj-gdc01.acsc.local' if org_unit == '09_HSJ' else 'hcnsc-gdc01.acsc.local' if org_unit == '10_HCNSC' else 'hmrp-gdc01.acsc.local' if org_unit == '11_HMRP' else 'hnsc-gdc01.acsc.local' if org_unit == '13_HNSC' else 'hsi-gdc01.acsc.local' if org_unit == '14_HSI' else 'hsjmcg-gdc01.acsc.local' if org_unit == '15_HSJT' else 'dce-gdc04.acsc.local' if org_unit == '16_DCSUL' else 'acsc.local' }}"
+
+...

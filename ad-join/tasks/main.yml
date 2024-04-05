@@ -1,0 +1,43 @@
+---
+# Include yaml to join domain, with the right confgs for each OS version
+  - include: rhel6.yml
+    when: ansible_os_family == "RedHat" and ansible_distribution_major_version == '6' 
+
+  - include: rhel7.yml
+    when: ansible_os_family == "RedHat" and ansible_distribution_major_version == '7' 
+
+  - include: rhel8.yml
+    when: ansible_os_family == "RedHat" and ansible_distribution_major_version == '8'
+
+  - include: debian.yml
+    when: ansible_os_family == "Debian"
+
+# Finish configurations
+  - name: Remove the requirement for fully qualified names in sssd_conf
+    replace:
+      path: /etc/sssd/sssd.conf
+      regexp: 'use_fully_qualified_names = True'
+      replace: 'use_fully_qualified_names = False'
+ #   notify:
+ #     - restart sssd
+  
+  - name: Restart sssd after properly configured
+    service:
+      name: sssd
+      state: restarted
+
+  - name: Add the Servers Admins AD Group to sudoers - RHEL Family
+    lineinfile:
+      dest: /etc/sudoers
+      line: '%corp_server_admins        ALL=(ALL)       ALL'
+      insertafter: '^%wheel'
+    when: ansible_os_family == "RedHat"
+
+  - name: Add the Servers Admins AD Group to sudoers - Debian Family
+    lineinfile:
+      dest: /etc/sudoers
+      line: '%corp_server_admins        ALL=(ALL)       ALL'
+      insertafter: '^%sudo'
+    when: ansible_os_family == "Debian"
+
+...
